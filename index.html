@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Signals & Systems Virtual Lab | SS Lab</title>
+    <meta name="description"
+        content="Handwritten notebook style interactive Signals & Systems lab: Learn and verify Linearity, Time-Invariance, Causality, and Stability intuitively.">
+
+    <!-- Google Fonts: Handwritten Caveat + Clean Inter + Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap"
+        rel="stylesheet">
+
+    <!-- KaTeX CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+
+    <!-- Notebook Paper Stylesheet -->
+    <link rel="stylesheet" href="css/style.css">
+
+    <!-- KaTeX JS & Auto-render extension -->
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"></script>
+
+    <!-- Plotly.js -->
+    <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+</head>
+
+<body class="notebook-body">
+
+    <!-- Top Notebook Bar -->
+    <header class="notebook-header">
+        <div class="header-container">
+            <div class="header-branding">
+                <div class="notebook-icon" aria-hidden="true">📓</div>
+                <div>
+                    <h1 class="header-title">SIGNALS & SYSTEMS VIRTUAL Lab</h1>
+                    <div class="header-handwriting">Electronics & Communication Engineering • Practical Lab</div>
+                </div>
+            </div>
+
+            <!-- Simple Notebook Tabs -->
+            <nav class="notebook-nav">
+                <button class="nav-tab active" data-tab="theory" id="nav-btn-theory">
+                    ✏️ 1. Interactive Notes & Intuition
+                </button>
+                <button class="nav-tab" data-tab="experiment" id="nav-btn-experiment">
+                    🔬 2. Virtual Experiment Workbench
+                </button>
+                <button class="nav-tab" data-tab="summary" id="nav-btn-summary">
+                    📋 3. System Master Sheet
+                </button>
+                <button class="nav-tab" data-tab="procedure" id="nav-btn-procedure">
+                    📝 4. Lab Procedure
+                </button>
+            </nav>
+
+        </div>
+    </header>
+
+    <!-- Main Notebook Page -->
+    <main class="main-page">
+
+        <!-- ====================================================================
+             TAB 1: HANDWRITTEN NOTES & INTERACTIVE FIRST VIEW
+             ==================================================================== -->
+        <section class="tab-pane active" id="tab-theory">
+            <div class="notebook-container">
+
+                <!-- Friendly Welcome Note Banner -->
+                <div class="sticky-note welcome-note">
+                    <div class="pin-icon">📌</div>
+                    <div class="note-heading">What are System Properties? (Understood in 2 Minutes!)</div>
+                    <p class="note-intro">
+                        Don't let complex Greek equations intimidate you! In Electronics, a <strong>system</strong> is
+                        simply a black box that transforms an input into an output:
+                        <span class="highlight-pen">Input $x(t) \longrightarrow \boxed{\text{System } T} \longrightarrow
+                            \text{Output } y(t)$</span>.
+                    </p>
+                    <p class="handwritten-accent">
+                        ✎ Here is what the 4 properties actually mean in simple everyday language...
+                    </p>
+                </div>
+
+                <!-- INTERACTIVE PLAYGROUND: "DOUBLING THE INPUT" -->
+                <div class="paper-card interactive-demo-card">
+                    <div class="card-ribbon">🎯 TRY IT INTERACTIVELY FIRST!</div>
+                    <h2 class="demo-title">The "Doubling the Input" Test (Intuition of Linearity)</h2>
+                    <p class="demo-subtitle">
+                        Click the buttons below to see what happens when you <strong>double</strong> or
+                        <strong>triple</strong> the input into two different systems:
+                    </p>
+
+                    <div class="demo-box">
+                        <div class="demo-controls-row">
+                            <div class="demo-field">
+                                <label>1. Pick a Machine:</label>
+                                <div class="toggle-pill-group">
+                                    <button type="button" class="btn-demo-pill active" id="btn-demo-sys-scale">
+                                        Double Machine: $y(t) = 2x(t)$
+                                    </button>
+                                    <button type="button" class="btn-demo-pill" id="btn-demo-sys-square">
+                                        Squaring Machine: $y(t) = x^2(t)$
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="demo-field">
+                                <label>2. Current Input Value:</label>
+                                <div class="input-display-badge">
+                                    Input $x = $ <span id="demo-input-val" class="font-bold">2</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Interactive Action Buttons -->
+                        <div class="demo-actions-row">
+                            <span class="action-label">Click to experiment:</span>
+                            <button type="button" class="btn-sketch" id="btn-demo-double">
+                                ⚡ Double the Input! (× 2)
+                            </button>
+                            <button type="button" class="btn-sketch" id="btn-demo-triple">
+                                ⚡ Triple the Input! (× 3)
+                            </button>
+                            <button type="button" class="btn-sketch-alt" id="btn-demo-reset">
+                                ↺ Reset to x = 2
+                            </button>
+                        </div>
+
+                        <!-- Interactive Observation Result Box -->
+                        <div class="demo-observation-panel" id="demo-observation-panel">
+                            <div class="observation-step">
+                                <span>Initial State:</span> Input $x = 2 \implies$ Output $y = 4$
+                            </div>
+                            <div class="observation-step highlight-step" id="demo-result-text">
+                                When input was doubled, output also doubled!
+                            </div>
+                            <div class="observation-verdict" id="demo-verdict-badge">
+                                ✓ Homogeneity & Linearity Holds!
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4 INTUITIVE HANDWRITTEN PROPERTY CARDS -->
+                <div class="notes-grid-4">
+
+                    <!-- 1. Linearity -->
+                    <div class="paper-card note-card">
+                        <div class="tape-strip"></div>
+                        <div class="note-card-header">
+                            <span class="note-tag tag-blue">Rule 1</span>
+                            <h3>Linearity</h3>
+                        </div>
+                        <div class="handwritten-tagline">"The Fair Multiplier & Fair Addition Rule"</div>
+                        <p class="note-text">
+                            If you double the input, does the output double? If you feed two signals $(A + B)$ at the
+                            same time, is the result just $(Output_A + Output_B)$?
+                        </p>
+                        <div class="sketch-math-box">
+                            $$T\{a x_1 + b x_2\} = a T\{x_1\} + b T\{x_2\}$$
+                        </div>
+                        <div class="quick-check">
+                            <span class="check-icon">💡</span>
+                            <span><strong>Example:</strong> $y(t) = 2x(t)$ is linear. But $y(t) = x^2(t)$ is non-linear
+                                because doubling the input quadruples the output!</span>
+                        </div>
+                    </div>
+
+                    <!-- 2. Time-Invariance -->
+                    <div class="paper-card note-card">
+                        <div class="tape-strip"></div>
+                        <div class="note-card-header">
+                            <span class="note-tag tag-purple">Rule 2</span>
+                            <h3>Time-Invariance</h3>
+                        </div>
+                        <div class="handwritten-tagline">"The Clock Doesn't Matter Rule"</div>
+                        <p class="note-text">
+                            If you play your favorite song now vs 10 minutes later, does it sound the same? Yes! A
+                            time-invariant system gives the exact same shape, just delayed by the same amount.
+                        </p>
+                        <div class="sketch-math-box">
+                            $$T\{x(t - t_0)\} = y(t - t_0)$$
+                        </div>
+                        <div class="quick-check">
+                            <span class="check-icon">💡</span>
+                            <span><strong>Example:</strong> $y(t) = x(t - 2)$ is time-invariant. But $y(t) = t \cdot
+                                x(t)$ is time-varying because the multiplier $t$ changes as time passes!</span>
+                        </div>
+                    </div>
+
+                    <!-- 3. Causality -->
+                    <div class="paper-card note-card">
+                        <div class="tape-strip"></div>
+                        <div class="note-card-header">
+                            <span class="note-tag tag-green">Rule 3</span>
+                            <h3>Causality</h3>
+                        </div>
+                        <div class="handwritten-tagline">"No Time-Traveling Rule"</div>
+                        <p class="note-text">
+                            Can your radio play tomorrow's news today? No! A real-world system only reacts to what
+                            happened in the past or right now. It can never depend on future inputs.
+                        </p>
+                        <div class="sketch-math-box">
+                            $$y(t) \text{ depends only on } x(\tau) \text{ for } \tau \le t$$
+                        </div>
+                        <div class="quick-check">
+                            <span class="check-icon">💡</span>
+                            <span><strong>Example:</strong> Delay $x(t - 2)$ is causal (past). But advance $x(t + 2)$ is
+                                non-causal because at $t=0$ it requires input at future instant $t=2$!</span>
+                        </div>
+                    </div>
+
+                    <!-- 4. Stability -->
+                    <div class="paper-card note-card">
+                        <div class="tape-strip"></div>
+                        <div class="note-card-header">
+                            <span class="note-tag tag-amber">Rule 4</span>
+                            <h3>BIBO Stability</h3>
+                        </div>
+                        <div class="handwritten-tagline">"Don't Blow Up Rule"</div>
+                        <p class="note-text">
+                            If you give the system a normal, bounded input signal (like volume within $\pm 1$), does the
+                            output stay bounded, or does it explode to infinity and blow up your speakers?
+                        </p>
+                        <div class="sketch-math-box">
+                            $$|x(t)| \le M_x < \infty \implies |y(t)| \le M_y < \infty$$ </div>
+                                <div class="quick-check">
+                                    <span class="check-icon">💡</span>
+                                    <span><strong>Example:</strong> Scaling $2x(t)$ is stable. But an Integrator
+                                        $\int_{-\infty}^t u(\tau)d\tau$ on a constant step produces an ever-growing ramp
+                                        $t \to \infty$ (Unstable)!</span>
+                                </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Big Friendly CTA -->
+                    <div class="paper-card launch-cta-card">
+                        <div class="cta-content">
+                            <h3>See how simple it is? Now let's test it with real signals!</h3>
+                            <p class="handwritten-accent font-lg">
+                                Select any system, choose a property, and watch the virtual oscilloscope verify it
+                                step-by-step!
+                            </p>
+                        </div>
+                        <button class="btn-main-launch" id="btn-proceed-to-lab">
+                            <span></span> Open Virtual Experiment Workbench →
+                        </button>
+                    </div>
+
+                </div>
+        </section>
+
+        <!-- ====================================================================
+             TAB 2: VIRTUAL EXPERIMENT WORKBENCH
+             ==================================================================== -->
+        <section class="tab-pane" id="tab-experiment">
+            <div class="notebook-container">
+
+                <!-- STEP 1: SYSTEM & PROPERTY SELECTOR -->
+                <div class="paper-card step-container">
+                    <div class="step-badge">STEP 1</div>
+                    <h2 class="step-title">Choose System & Target Property</h2>
+
+                    <div class="step1-grid">
+                        <!-- System Selection -->
+                        <div class="field-box">
+                            <label for="select-system" class="field-label">Select Mathematical System:</label>
+                            <select id="select-system" class="notebook-select"></select>
+
+                            <div class="formula-blackboard" id="system-formula-badge"></div>
+                            <div class="formula-desc" id="system-desc-text"></div>
+                        </div>
+
+                        <!-- Property Buttons -->
+                        <div class="field-box">
+                            <label class="field-label">Select Property to Verify:</label>
+                            <div class="prop-btn-grid">
+                                <button type="button" class="btn-prop-select active" data-property="linearity">
+                                    <span class="prop-icon">➕</span>
+                                    <span>1. Linearity</span>
+                                </button>
+                                <button type="button" class="btn-prop-select" data-property="timeInvariance">
+                                    <span class="prop-icon">⏱️</span>
+                                    <span>2. Time Invariance</span>
+                                </button>
+                                <button type="button" class="btn-prop-select" data-property="causality">
+                                    <span class="prop-icon">⏳</span>
+                                    <span>3. Causality</span>
+                                </button>
+                                <button type="button" class="btn-prop-select" data-property="stability">
+                                    <span class="prop-icon">🛡️</span>
+                                    <span>4. BIBO Stability</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 2: TEST INPUT WAVEFORMS -->
+                <div class="paper-card step-container" id="card-signal-inputs">
+                    <div class="step-badge">STEP 2</div>
+                    <h2 class="step-title">Configure Test Input Waveforms</h2>
+
+                    <div id="dynamic-controls-container">
+                        <!-- Populated dynamically based on property -->
+                    </div>
+
+                    <div class="run-buttons-bar">
+                        <button class="btn-run-experiment" id="btn-run-test">
+                            <span>▶</span> RUN EXPERIMENT & VERIFY
+                        </button>
+                        <button class="btn-reset-plain" id="btn-reset-test">
+                            <span>↺</span> Reset Defaults
+                        </button>
+                    </div>
+                </div>
+
+                <!-- STEP 3: OBSERVATIONS & VERIFICATION RESULTS -->
+                <div class="paper-card step-container results-card" id="card-verification-results">
+                    <div class="step-badge">STEP 3</div>
+                    <h2 class="step-title">Experimental Observations & Verdict</h2>
+
+                    <!-- Big Result Banner -->
+                    <div class="verdict-banner-box">
+                        <div id="verdict-badge" class="verdict-tag status-pass">
+                            ✓ System is Linear
+                        </div>
+                        <div class="verdict-meta">
+                            <span>Tolerance: $10^{-4}$</span>
+                            <span>Grid points: $N = 600$</span>
+                        </div>
+                    </div>
+
+                    <p class="result-summary-text" id="result-summary-text"></p>
+
+                    <!-- Mathematical Condition Box -->
+                    <div class="math-proof-banner">
+                        <div class="proof-label">Mathematical Condition Evaluated:</div>
+                        <div id="math-condition-box"></div>
+                    </div>
+
+                    <!-- Metrics and ECE Explanation -->
+                    <div class="details-2col">
+                        <div class="metric-note" id="error-metric-box"></div>
+                        <div class="why-note" id="explanation-why-box"></div>
+                    </div>
+
+                    <!-- Academic Note / Disclaimer -->
+                    <div class="academic-disclaimer" id="disclaimer-box" style="display: none;"></div>
+
+                    <!-- Clean Waveform Oscilloscopes -->
+                    <div class="oscilloscopes-wrap">
+                        <div class="scope-card">
+                            <h3 class="scope-title">Waveform 1: Test Input Signal(s) $x(t)$</h3>
+                            <div id="plot-container-1" class="plot-box"></div>
+                        </div>
+
+                        <div class="scope-card">
+                            <h3 class="scope-title">Waveform 2: System Transformation & Comparison</h3>
+                            <div id="plot-container-2" class="plot-box"></div>
+                        </div>
+
+                        <div class="scope-card" id="plot-3-card">
+                            <h3 class="scope-title">Waveform 3: Error Difference ($\epsilon(t)$) vs Tolerance Threshold
+                            </h3>
+                            <div id="plot-container-3" class="plot-box"></div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ====================================================================
+             TAB 3: MASTER SUMMARY SHEET
+             ==================================================================== -->
+        <section class="tab-pane" id="tab-summary">
+            <div class="notebook-container">
+                <div class="paper-card">
+                    <h2 class="step-title">8 Standard Systems Master Reference Sheet</h2>
+                    <p class="sheet-desc">
+                        Every system analyzed in your Signals & Systems coursework. Click <strong>"Test System"</strong>
+                        to load any equation directly into the workbench.
+                    </p>
+
+                    <div class="table-scroll">
+                        <table class="notebook-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>System Equation</th>
+                                    <th>Linearity</th>
+                                    <th>Time Invariance</th>
+                                    <th>Causality</th>
+                                    <th>BIBO Stability</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="property-matrix-body">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ====================================================================
+             TAB 4: LAB PROCEDURE
+             ==================================================================== -->
+        <section class="tab-pane" id="tab-procedure">
+            <div class="notebook-container">
+                <div class="paper-card">
+                    <h2 class="step-title">Standard Laboratory Procedure</h2>
+                    <ol class="notebook-ol">
+                        <li><strong>Step 1:</strong> Select a canonical continuous-time system from the drop-down menu.
+                        </li>
+                        <li><strong>Step 2:</strong> Select the property to verify: Linearity, Time-Invariance,
+                            Causality, or Stability.</li>
+                        <li><strong>Step 3:</strong> Configure the test waveforms (Sine, Step, Pulse, Ramp) and adjust
+                            amplitudes.</li>
+                        <li><strong>Step 4:</strong> Click <strong>[ RUN EXPERIMENT & VERIFY ]</strong> to compute the
+                            signals.</li>
+                        <li><strong>Step 5:</strong> Observe the input, output superposition/shift comparison, and
+                            difference graphs.</li>
+                        <li><strong>Step 6:</strong> Check that the maximum numerical error $\epsilon_{\max}$ is below
+                            the tolerance threshold ($10^{-4}$) to confirm the result.</li>
+                    </ol>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Toast Notification -->
+    <div id="lab-toast" class="lab-toast"></div>
+
+    <!-- Notebook Footer -->
+    <footer class="notebook-footer">
+        <div class="footer-container">
+            <span><strong>Signals & Systems Virtual Lab</strong> </span>
+        </div>
+    </footer>
+
+    <!-- Script Modules -->
+    <script src="js/utils.js"></script>
+    <script src="js/signals.js"></script>
+    <script src="js/systems.js"></script>
+    <script src="js/plots.js"></script>
+    <script src="js/linearity.js"></script>
+    <script src="js/timeInvariance.js"></script>
+    <script src="js/causality.js"></script>
+    <script src="js/stability.js"></script>
+    <script src="js/app.js"></script>
+</body>
+
+</html>

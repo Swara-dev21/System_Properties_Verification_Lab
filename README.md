@@ -1,112 +1,124 @@
 # System Properties Verification Virtual Lab
 
-An interactive, educational **Virtual Laboratory** designed for Signals and Systems practical experiments. The platform allows students and instructors to select canonical mathematical systems, inject test signals, and experimentally verify fundamental system properties in real time.
+An interactive, educational **Virtual Laboratory** designed for **Signals and Systems** practical experiments in Electronics, Electrical, and Computer Engineering. The platform allows students and instructors to select or enter input signals and mathematical systems, visualize input/output waveforms, and experimentally verify all **5 fundamental system properties** in real time:
+
+1. **Linearity** (Linear vs Non-linear)
+2. **Causality** (Causal vs Non-causal)
+3. **BIBO Stability** (Stable vs Unstable)
+4. **Time Invariance** (Time-Invariant vs Time-Variant)
+5. **Static / Dynamic** (Memoryless vs With Memory)
 
 ---
 
-## 🚀 Live Demo & Deployment
+## 🚀 Live Demo & Local Execution
 
-This project is built as a **pure client-side web application** (HTML5, CSS3, JavaScript ES6+), requiring **zero backend servers or databases**. It can be deployed directly to **GitHub Pages** or any static web host.
+This project is a **pure frontend web application** (HTML5, CSS3, JavaScript ES6+), running completely in the browser with **zero backend servers, databases, or API keys required**.
 
-### Local Execution
+### Running Locally
 1. Clone or download this repository.
-2. Open `index.html` directly in any modern web browser (Google Chrome, Firefox, Edge, Safari).
-3. Alternatively, serve via any static web server:
+2. Open `index.html` directly in any web browser (Chrome, Edge, Firefox, Safari).
+3. Alternatively, run the included Node.js server:
    ```bash
-   # Using Python 3 (optional)
-   python -m http.server 8000
-   
-   # Using Node.js npx serve (optional)
-   npx serve .
+   node server.js
    ```
+   and navigate to `http://localhost:5173`.
 
 ---
 
-## 🎯 Supported Canonical Systems
+## 🔬 Core Laboratory Features
 
-The virtual lab features 8 predefined, mathematically robust systems:
+### 1. Dual Oscilloscope Display
+- **CH 1: Input Signal $x(t)$**
+- **CH 2: System Output $y(t) = T\{x(t)\}$**
+- Real-time amplitude and peak tracking with responsive interactive Plotly waveforms.
 
-| # | System Equation | Operation | Linearity | Time Invariance | Causality | BIBO Stability |
-|---|---|---|---|---|---|---|
-| **1** | $y(t) = 2x(t)$ | Linear Scaling | ✓ Linear | ✓ Time Invariant | ✓ Causal | ✓ Stable |
-| **2** | $y(t) = x^2(t)$ | Squaring | ✗ Non-linear | ✓ Time Invariant | ✓ Causal | ✓ Stable |
-| **3** | $y(t) = x(t-2)$ | Time Delay | ✓ Linear | ✓ Time Invariant | ✓ Causal | ✓ Stable |
-| **4** | $y(t) = t \cdot x(t)$ | Time-Varying Scaling | ✓ Linear | ✗ Time Varying | ✓ Causal | ✗ Not Stable |
-| **5** | $y(t) = \|x(t)\|$ | Absolute Value | ✗ Non-linear | ✓ Time Invariant | ✓ Causal | ✓ Stable |
-| **6** | $y(t) = \frac{dx(t)}{dt}$ | Differentiator | ✓ Linear | ✓ Time Invariant | ✓ Causal | ✗ Not Stable |
-| **7** | $y(t) = \int_{-\infty}^{t} x(\tau) d\tau$ | Integrator | ✓ Linear | ✓ Time Invariant | ✓ Causal | ✗ Not Stable |
-| **8** | $y(t) = x(t+2)$ | Time Advance | ✓ Linear | ✓ Time Invariant | ✗ Non-Causal | ✓ Stable |
+### 2. Predefined & Custom Input Signals
+- **Predefined Library**: Sine, Cosine, Unit Step $u(t)$, Ramp $r(t)$, Unit Impulse $\delta(t)$, Exponential $e^{-at}u(t)$, Square Wave, Triangular Wave, and Rectangular Pulse.
+- **Custom Signal Expression**: Type any mathematical expression, e.g.:
+  - $x(t) = \sin(t)$
+  - $x(t) = e^{-t} \cdot u(t)$
+  - $x(t) = t$
+  - $x(t) = \cos(2t)$
+  - $x(t) = r(t - 1)$
+  with live mini-waveform preview before launching experiments.
+
+### 3. Predefined & Custom Systems
+- **12 Canonical Systems**:
+  1. Linear Scaling: $y(t) = 2x(t)$
+  2. Squaring System: $y(t) = x^2(t)$
+  3. Time Delay: $y(t) = x(t - 1)$
+  4. Time Advance: $y(t) = x(t + 1)$
+  5. Time Multiplier: $y(t) = t \cdot x(t)$
+  6. Differentiator: $y(t) = \frac{dx(t)}{dt}$
+  7. Ideal Integrator: $y(t) = \int_{-\infty}^t x(\tau) d\tau$
+  8. Absolute Value (Rectifier): $y(t) = |x(t)|$
+  9. Time Scaling (Compression): $y(t) = x(2t)$
+  10. Time Reversal (Inversion): $y(t) = x(-t)$
+  11. Affine Scaling: $y(t) = 2x(t) + 3$
+  12. Exponential Operator: $y(t) = e^{x(t)}$
+- **Custom System Parser**: Type any custom system equation:
+  - $y(t) = 3x(t)$
+  - $y(t) = x(t)^2 + 1$
+  - $y(t) = x(t - 2)$
+  - $y(t) = t \cdot x(t)$
+  - $y(t) = \text{diff}(x(t))$
+  - $y(t) = \text{integral}(x(t))$
+  The engine automatically analyzes, simulates, and verifies all 5 properties!
+
+### 4. 5-Property Summary Dashboard
+Displays a color-coded executive summary across all 5 properties with one-click access to detailed proofs:
+| System Property | Classification | Educational Explanation |
+| :--- | :--- | :--- |
+| **Linearity** | Linear / Non-linear | Verifies superposition $T\{a x_1 + b x_2\} = a T\{x_1\} + b T\{x_2\}$ |
+| **Causality** | Causal / Non-causal | Tests if output depends only on present and past inputs ($\tau \le t$) |
+| **BIBO Stability** | Stable / Unstable | Checks if every bounded input produces a bounded output |
+| **Time Invariance** | Time-Invariant / Time-Variant | Compares response to shifted input vs delayed output |
+| **Static / Dynamic** | Static / Dynamic | Memory probe verifies whether system depends on past/future states |
+
+### 5. Detailed Step-by-Step Mathematical Verification
+Clicking on any property card reveals:
+- The exact mathematical condition and algebraic derivation rendered in **KaTeX**.
+- Numerical tolerance metrics ($\epsilon_{\max} \le 10^{-4}$).
+- Pedagogical ECE reasoning explaining why the result was obtained.
+- Specialized comparison oscilloscopes (LHS vs RHS Superposition, Delay vs Shift, Causality disturbance probe, Memory probe test).
+
+### 6. Practice & Quiz Mode (Interactive Assessment)
+- Generates system equations and prompts students to predict all 5 properties.
+- **Check Answer** provides immediate scoring (e.g. 5/5 ⭐), color-coded feedback, and detailed academic reasons.
+- **Load in Lab Workbench** button allows students to immediately test and verify quiz equations with live waveforms.
 
 ---
 
-## 🔬 Property Verification Methodologies
-
-The lab does not merely display textbook classifications—students perform an empirical virtual experiment:
-
-### 1. Linearity Verification
-Tests the superposition principle:
-$$T\{a x_1(t) + b x_2(t)\} = a T\{x_1(t)\} + b T\{x_2(t)\}$$
-- Computes LHS (system applied to combined input $a x_1 + b x_2$).
-- Computes RHS (weighted sum of individual responses $a y_1 + b y_2$).
-- Displays overlay plots of LHS vs RHS and plots the error signal:
-  $$\text{Difference}(t) = \text{LHS} - \text{RHS}$$
-- Evaluates maximum absolute error against tolerance $\epsilon_{\max} < 10^{-4}$.
-
-### 2. Time-Invariance Verification
-Tests the shift commutativity property:
-$$T\{x(t - t_0)\} = y(t - t_0) \quad \text{where } y(t) = T\{x(t)\}$$
-- Path 1: Evaluates original output $y_1(t) = T\{x(t)\}$ and shifts by $t_0 \implies y_1(t - t_0)$.
-- Path 2: Shifts input $x(t - t_0)$ and evaluates output $y_2(t) = T\{x(t - t_0)\}$.
-- Compares Path 1 vs Path 2 and measures discrepancy error over the valid time horizon.
-
-### 3. Causality Verification
-Verifies that the output at any present observation instant $t_{\text{probe}}$ depends solely on present and past input values ($\tau \le t_{\text{probe}}$):
-- **Timeline Probe**: Maps the exact sample time needed to evaluate $y(t_{\text{probe}})$.
-- **Future Perturbation Experiment**: Injects an unexpected disturbance strictly in the future ($t > t_{\text{probe}}$).
-- Observes whether present or past output reacts prematurely. For the time advance system $y(t) = x(t+2)$, the disturbance leaks backward in time, empirically demonstrating non-causality.
-
-### 4. BIBO Stability Verification
-Tests the Bounded-Input Bounded-Output definition:
-$$|x(t)| \le M_x < \infty \implies |y(t)| \le M_y < \infty$$
-- Injects bounded test waveforms (Sine, Step, Decaying Exponential, Rectangular Pulse).
-- Tracks output peak amplitude $M_y$ and running envelope $\max_{0 \le \tau \le t} |y(\tau)|$.
-- For unstable systems ($y(t) = t x(t)$ and integrator with $u(t)$), demonstrates asymptotic growth and divergence.
-- Explicitly provides the theoretical proof (e.g., impulse response absolute integrability $\int_{-\infty}^\infty |h(\tau)| d\tau < \infty$), highlighting the academic principle that a finite simulation window alone does not constitute universal proof.
-
----
-
-## 📂 Project Architecture
+## 📂 Project Structure
 
 ```text
-System_Properties_Verification_Lab/
+VR_LAB/
 ├── index.html                           # Main web application entrypoint
 ├── css/
-│   └── style.css                        # Glassmorphic dark lab theme & print styles
+│   └── style.css                        # Modern dark cyber-lab UI & responsive styles
 ├── js/
-│   ├── utils.js                         # Numerical math utilities, tolerance & KaTeX helpers
-│   ├── signals.js                       # Signal library (Sine, Cosine, Step, Ramp, Pulse, Exp)
-│   ├── systems.js                       # Mathematical definitions & theoretical properties of 8 systems
-│   ├── plots.js                         # Plotly.js oscilloscope and graph renderers
+│   ├── utils.js                         # Numerical utilities & expression compilers
+│   ├── signals.js                       # 9 signal generators & custom expression support
+│   ├── systems.js                       # 12 canonical systems & custom system parser
+│   ├── plots.js                         # Plotly.js oscilloscopes & comparison graphs
 │   ├── linearity.js                     # Superposition LHS vs RHS verification engine
-│   ├── timeInvariance.js                # Time shift commutativity verification engine
-│   ├── causality.js                     # Temporal probe & perturbation experiment engine
-│   ├── stability.js                     # BIBO bound tracking & growth analysis engine
-│   └── app.js                           # UI controller, state management & stepper logic
-├── README.md                            # Comprehensive laboratory documentation
-└── LICENSE                              # Open-source MIT License
+│   ├── timeInvariance.js                # Time-shift commutativity verification engine
+│   ├── causality.js                     # Temporal perturbation & probe verification engine
+│   ├── stability.js                     # BIBO bound tracking & envelope divergence engine
+│   ├── staticDynamic.js                 # Memoryless vs with-memory probe verification engine
+│   ├── practice.js                      # Quiz & prediction challenge engine
+│   └── app.js                           # Central UI controller & application logic
+├── server.js                            # Lightweight static dev server
+└── README.md                            # Comprehensive documentation
 ```
 
 ---
 
-## 🛠️ Technology Stack
+## 📜 Educational Pedagogy: Learn → Experiment → Visualize → Verify → Understand
 
-- **HTML5 & Modern CSS3**: Semantic layouts, CSS Grid, Flexbox, glassmorphic backdrop filters, custom scrollbars, and printable report stylesheet.
-- **JavaScript ES6+**: Modular functional architecture with clean separation between numerical math engines and DOM controllers.
-- **Plotly.js (v2.32.0)**: Interactive, zoomable oscilloscopes with high-contrast signal traces.
-- **KaTeX (v0.16.10)**: Fast browser-side mathematical typesetting.
-
----
-
-## 📜 License
-
-MIT License. Free for academic, university, and educational use.
+Instead of memorizing static tables, students:
+1. **Configure** an input signal and mathematical system.
+2. **Observe** continuous-time waveforms on calibrated dual oscilloscopes.
+3. **Verify** all 5 properties empirically against numerical thresholds.
+4. **Inspect** mathematical derivations and algebraic proofs.
+5. **Test** their intuition in the Practice Challenge mode.

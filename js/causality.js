@@ -135,4 +135,9 @@ const CausalityTester = {
     }
 };
 
-window.CausalityTester = CausalityTester;
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = CausalityTester;
+}
+if (typeof window !== 'undefined') {
+    window.CausalityTester = CausalityTester;
+}

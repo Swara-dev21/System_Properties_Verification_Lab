@@ -112,4 +112,9 @@ const LinearityTester = {
     }
 };
 
-window.LinearityTester = LinearityTester;
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = LinearityTester;
+}
+if (typeof window !== 'undefined') {
+    window.LinearityTester = LinearityTester;
+}

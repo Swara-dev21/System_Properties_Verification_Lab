@@ -124,6 +124,94 @@ const Signals = {
                 const halfW = (p.width || 2.0) / 2;
                 return Math.abs(t - t0) <= halfW ? p.amplitude : 0;
             }
+        },
+
+        impulse: {
+            id: 'impulse',
+            name: 'Unit Impulse δ(t)',
+            latex: 'x(t) = A \\cdot \\delta(t - t_0)',
+            description: 'Dirac delta impulse approximated by a high-density normalized pulse',
+            defaultParams: {
+                amplitude: 1.0,
+                shift: 0.0
+            },
+            paramControls: [
+                { id: 'amplitude', label: 'Impulse Area / Weight (A)', min: 0.2, max: 3, step: 0.1, default: 1.0 },
+                { id: 'shift', label: 'Location Time (t₀)', min: -3, max: 3, step: 0.5, default: 0.0 }
+            ],
+            fn: (t, p) => {
+                const t0 = p.shift || 0;
+                const eps = 0.1;
+                return Math.abs(t - t0) <= eps / 2 ? (p.amplitude / eps) : 0;
+            }
+        },
+
+        square: {
+            id: 'square',
+            name: 'Square Wave',
+            latex: 'x(t) = A \\cdot \\operatorname{sgn}(\\sin(2\\pi f t))',
+            description: 'Periodic square wave with 50% duty cycle and frequency f',
+            defaultParams: {
+                amplitude: 1.0,
+                frequency: 1.0
+            },
+            paramControls: [
+                { id: 'amplitude', label: 'Amplitude (A)', min: -3, max: 3, step: 0.1, default: 1.0 },
+                { id: 'frequency', label: 'Frequency (f, Hz)', min: 0.2, max: 3, step: 0.1, default: 1.0 }
+            ],
+            fn: (t, p) => {
+                const f = p.frequency || 1.0;
+                const val = Math.sin(2 * Math.PI * f * t);
+                return val >= 0 ? p.amplitude : -p.amplitude;
+            }
+        },
+
+        triangle: {
+            id: 'triangle',
+            name: 'Triangular Wave',
+            latex: 'x(t) = A \\cdot \\text{tri}(2\\pi f t)',
+            description: 'Periodic symmetric triangular wave oscillating between -A and +A',
+            defaultParams: {
+                amplitude: 1.0,
+                frequency: 1.0
+            },
+            paramControls: [
+                { id: 'amplitude', label: 'Amplitude (A)', min: -3, max: 3, step: 0.1, default: 1.0 },
+                { id: 'frequency', label: 'Frequency (f, Hz)', min: 0.2, max: 3, step: 0.1, default: 1.0 }
+            ],
+            fn: (t, p) => {
+                const f = p.frequency || 1.0;
+                const period = 1 / f;
+                const modT = ((t % period) + period) % period;
+                const triNorm = 2 * Math.abs(2 * (modT * f - Math.floor(modT * f + 0.5))) - 1;
+                return p.amplitude * triNorm;
+            }
+        },
+
+        custom: {
+            id: 'custom',
+            name: 'Custom Signal Expression',
+            latex: 'x(t) = \\text{Custom Expression}',
+            description: 'User-specified mathematical expression in terms of time variable t',
+            defaultParams: {
+                expr: 'sin(t)',
+                amplitude: 1.0
+            },
+            paramControls: [
+                { id: 'amplitude', label: 'Scale Multiplier (A)', min: -3, max: 3, step: 0.1, default: 1.0 }
+            ],
+            fn: (t, p) => {
+                if (!p._compiledFn || p._cachedExpr !== p.expr) {
+                    const compiled = Utils.compileMathExpr(p.expr || 'sin(t)');
+                    if (compiled.success) {
+                        p._compiledFn = compiled.fn;
+                        p._cachedExpr = p.expr;
+                    } else {
+                        p._compiledFn = () => 0;
+                    }
+                }
+                return (p.amplitude !== undefined ? p.amplitude : 1.0) * p._compiledFn(t);
+            }
         }
     },
 
@@ -162,4 +250,9 @@ const Signals = {
     }
 };
 
-window.Signals = Signals;
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = Signals;
+}
+if (typeof window !== 'undefined') {
+    window.Signals = Signals;
+}

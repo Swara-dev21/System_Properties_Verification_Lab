@@ -122,4 +122,9 @@ const StabilityTester = {
     }
 };
 
-window.StabilityTester = StabilityTester;
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = StabilityTester;
+}
+if (typeof window !== 'undefined') {
+    window.StabilityTester = StabilityTester;
+}

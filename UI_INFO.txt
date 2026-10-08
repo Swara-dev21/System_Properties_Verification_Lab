@@ -1,0 +1,173 @@
+================================================================================
+          SYSTEM PROPERTIES VERIFICATION VIRTUAL LAB - UI SPECIFICATION
+================================================================================
+Design Theme: Minimalist ECE Virtual Lab (Inspired by ameybendale/SS-virtual-lab)
+Aesthetics: Clean dark palette (#0f1115 / #171a21 / #2b303b), crisp typography,
+            uncluttered cards, live running oscilloscope signal, rectangular property sections.
+================================================================================
+
+1. OVERALL APP STRUCTURE & NAVIGATION
+--------------------------------------------------------------------------------
+The virtual lab consists of strictly TWO primary views (accessible via a clean
+segmented pill switch in the header and an in-page flow button):
+
+[ Header ]
+  - Title: System Properties Lab
+  - Subtitle: Signals & Systems • Interactive Verification Laboratory
+  - Segmented View Switch: [ Theory ] | [ Experiment ]
+
+Navigation Flow:
+  Theory View (Concepts & Definitions)
+       │
+       ▼ [ Go to Experiment → ] button
+  Experiment View (Interactive Lead Panel + Input Scope + 5 Rectangular Property Sections)
+
+
+================================================================================
+2. VIEW 1: THEORY (EXPLAINING THE 5 PROPERTIES)
+================================================================================
+A clean, student-friendly conceptual overview that explains system properties
+in plain, intuitive language without overwhelming equations:
+
+• Welcome Card:
+  Introduction to signal transformation x(t) ──► System T{·} ──► Output y(t).
+
+• 5 Minimal Property Explanations:
+  1. Linear vs Non-linear:
+     - Definition: Superposition principle (scaling and additivity).
+     - Intuition: Doubling input doubles output without harmonic distortion.
+     - Example: y(t) = 2x(t) is linear; y(t) = x²(t) is non-linear.
+
+  2. Causal vs Non-causal:
+     - Definition: Present output depends strictly on present/past inputs (t' ≤ t).
+     - Intuition: Non-anticipative; no time-traveling.
+     - Example: y(t) = 2x(t) is causal; y(t) = x(t + 1) is non-causal.
+
+  3. Time-Invariant vs Time-Variant:
+     - Definition: Delaying input delays output identically without changing shape.
+     - Intuition: System behavior is clock-independent.
+     - Example: y(t) = 2x(t) is time-invariant; y(t) = t·x(t) is time-variant.
+
+  4. Stable vs Unstable (BIBO):
+     - Definition: Bounded (finite) input produces strictly bounded (finite) output.
+     - Intuition: Output amplitude will not diverge to infinity.
+     - Example: y(t) = 2x(t) is stable; Integrator with step is unstable.
+
+  5. Static vs Dynamic (Memory):
+     - Definition: Static systems depend solely on current sample x(t). Dynamic
+       systems require past or future memory (delays, derivatives, storage).
+     - Intuition: Memoryless vs systems with storage (capacitors/inductors).
+     - Example: y(t) = 2x(t) is static; y(t) = x(t - 1) is dynamic.
+
+• Bottom Action Button:
+  [ Go to Experiment → ] (Switches to Experiment Workbench)
+
+
+================================================================================
+3. VIEW 2: EXPERIMENT WORKBENCH
+================================================================================
+
+--------------------------------------------------------------------------------
+A. LEFT LEAD PANEL (Sidebar - Width: ~310px)
+--------------------------------------------------------------------------------
+1. Input Signal Selection & Sliders Card:
+   - Signal Dropdown:
+     * Sine Wave: sin(2πft + φ)
+     * Cosine Wave: cos(2πft + φ)
+     * Square Wave: sgn(sin(2πft))
+     * Triangular Wave
+     * Unit Step: u(t)
+     * Ramp Signal: r(t)
+     * Exponential: e^(-at) u(t)
+   - Amplitude (A) Slider & Output: 0.2 to 3.0 V (Default: 1.00 V)
+   - Frequency (f) Slider & Output: 0.2 to 4.0 Hz (Default: 1.00 Hz)
+   - Phase (φ) Slider & Output: -3.14 to 3.14 rad (Default: 0.00 rad)
+
+2. Execution & Live Oscilloscope Control Card:
+   - [ ▶ Run Signal (Live) ] / [ ⏸ Pause Signal ]: Starts/pauses continuous live beam.
+   - [ ↺ Reset ]: Restores default signal settings and restarts live beam.
+
+3. Signal Measurements & Stats Card:
+   - Peak-to-Peak (V_pp): Live readout (e.g. 2.00 V)
+   - Fundamental Period (T = 1/f): Live readout (e.g. 1.00 s)
+   - Angular Frequency (ω = 2πf): Live readout (e.g. 6.28 rad/s)
+
+
+--------------------------------------------------------------------------------
+B. MAIN DISPLAY WINDOW (INPUT SCOPE + 5 RECTANGULAR SECTIONS)
+--------------------------------------------------------------------------------
+Organized into an uncluttered, responsive layout with live running animations:
+
+• Top Input Signal Scope Card:
+  - Title: Input Signal Scope x(t)
+  - Subtitle: Live signal details (Name, A, f, φ)
+  - Live Status Pill: [ ● LIVE RUNNING ] / [ PAUSED ]
+  - Wide Oscilloscope Screen: Cyan (#5aa9e6) trace scrolling smoothly at 60 FPS.
+
+• 5 Dedicated Rectangular Property Sections (Horizontal Stack):
+
+  1. SECTION 1: LINEAR / NON-LINEAR
+     - Left Info Column:
+       * Status Tag: [ ● Linear ] (Green)
+       * Description: Superposition principle test.
+       * Stat Chip: Superposition: a·x₁(t) + b·x₂(t) Verified
+     - Right Rectangular Plot:
+       * Live comparison: Input x(t), Linear scaled 2x(t), Non-linear distorted x²(t).
+
+  2. SECTION 2: CAUSAL / NON-CAUSAL
+     - Left Info Column:
+       * Status Tag: [ ● Causal ] (Green)
+       * Description: Temporal dependency check.
+       * Stat Chip: Dependency: Present & Past Samples Only
+     - Right Rectangular Plot:
+       * Live comparison: Present x(t), Causal delay x(t-0.5), Non-causal advance x(t+0.5).
+
+  3. SECTION 3: TIME-INVARIANT / TIME-VARIANT
+     - Left Info Column:
+       * Status Tag: [ ● Time-Invariant ] (Green)
+       * Description: Time-shift preservation check.
+       * Stat Chip: Time Shift: T{x(t - t₀)} = y(t - t₀)
+     - Right Rectangular Plot:
+       * Live comparison: Original x(t) and Time-delayed x(t - 1.0s) propagating in sync.
+
+  4. SECTION 4: STABLE / UNSTABLE (BIBO)
+     - Left Info Column:
+       * Status Tag: [ ● BIBO Stable ] (Green)
+       * Description: Amplitude bounded limit check.
+       * Stat Chip: Bound Limit: |x(t)| ≤ 1.00 V < ∞
+     - Right Rectangular Plot:
+       * Live envelope check: Signal x(t) bounded between +M_x and -M_x limit lines.
+
+  5. SECTION 5: STATIC / DYNAMIC (MEMORY)
+     - Left Info Column:
+       * Status Tag: [ ● Static (Memoryless) ] (Cyan)
+       * Description: Memory buffer requirement check.
+       * Stat Chip: Memory Buffer: Instantaneous (Zero Memory)
+     - Right Rectangular Plot:
+       * Live comparison: Instantaneous probe sample at t=0 vs Memory delay buffer.
+
+
+================================================================================
+4. COLOR PALETTE & VISUAL TOKENS (WHITE / LIGHT THEME)
+================================================================================
+- Background: #f8fafc (Clean off-white / light slate canvas)
+- Card Surfaces: #ffffff (Pure white cards and containers)
+- Borders & Dividers: #e2e8f0 (Subtle clean borders)
+- Text Primary: #0f172a (Deep slate for crisp readability)
+- Text Muted: #64748b (Medium slate gray)
+- Primary Beam Trace (Input Signal): #0284c7 (High-contrast sky blue)
+- Non-linear / Distortion Trace: #d97706 (Warm amber)
+- Pass / Causal / Linear / Stable: #16a34a (Emerald green)
+- Bounds & Probe Markers: #b45309 (Dark gold / amber)
+- Dynamic / Memory Buffer Trace: #7c3aed (Vibrant violet)
+- Non-causal / Future Trace: #dc2626 (Crimson red)
+- Active Buttons & Accents: #2563eb (Royal blue)
+
+
+================================================================================
+5. LOCAL SERVER & DEPLOYMENT
+================================================================================
+URL: http://localhost:5173
+File Path: d:\VR_LAB\UI_INFO.txt
+Architecture: Pure client-side HTML, CSS, and JS (Zero backend dependencies).
+================================================================================

@@ -1,493 +1,341 @@
 /**
  * System Properties Verification Virtual Lab
- * Plotly-based Interactive Graph Rendering Engine
+ * Minimalist Plotly Plot Rendering Engine
+ * Clean Light / White Theme
+ * Optimized for high-performance 60 FPS live oscilloscope animation
  */
 
 const Plots = {
-    // Crisp Engineering Notebook Theme for Plotly
     theme: {
         paper_bgcolor: '#ffffff',
-        plot_bgcolor: '#faf8f5',
+        plot_bgcolor: '#ffffff',
         font: {
-            family: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
-            color: '#334155',
-            size: 11
+            family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+            color: '#64748b',
+            size: 10
         },
-        margin: { l: 50, r: 25, t: 35, b: 40 },
-        gridcolor: 'rgba(0, 0, 0, 0.08)',
-        zerolinecolor: 'rgba(0, 0, 0, 0.25)',
+        marginScope: { l: 40, r: 15, t: 15, b: 28 },
+        marginProp: { l: 36, r: 12, t: 8, b: 24 },
+        gridcolor: '#e2e8f0',
+        zerolinecolor: '#cbd5e1',
         colors: {
-            cyan: '#0284c7',      // Deep Sky Blue
-            violet: '#7c3aed',    // Violet Ink
-            emerald: '#059669',   // Forest Green
-            amber: '#d97706',     // Ochre Amber
-            rose: '#dc2626',      // Crimson Red
-            blue: '#2563eb',      // Royal Blue
-            indigo: '#4f46e5',
-            slate: '#64748b'
+            cyan: '#0284c7',      // Deep crisp sky blue (high contrast)
+            amber: '#d97706',     // Warm amber
+            green: '#16a34a',     // Emerald green
+            gold: '#b45309',      // Dark gold
+            violet: '#7c3aed',    // Vibrant violet
+            red: '#dc2626'        // Crimson red
         }
     },
 
     plotlyConfig: {
         responsive: true,
-        displayModeBar: true,
-        displaylogo: false,
-        modeBarButtonsToRemove: ['lasso2d', 'select2d', 'hoverClosestCartesian', 'hoverCompareCartesian'],
-        toImageButtonOptions: {
-            format: 'png',
-            filename: 'system_properties_lab_plot',
-            height: 450,
-            width: 750,
-            scale: 2
-        }
+        displayModeBar: false
     },
 
-    getBaseLayout(title, xTitle = 'Time t (s)', yTitle = 'Amplitude') {
-        return {
-            title: {
-                text: title,
-                font: { size: 13, color: '#1e293b', weight: 600 },
-                x: 0.05
-            },
+    getBaseLayout(margin, yRange) {
+        const layout = {
             paper_bgcolor: this.theme.paper_bgcolor,
             plot_bgcolor: this.theme.plot_bgcolor,
             font: this.theme.font,
-            margin: this.theme.margin,
-            showlegend: true,
-            legend: {
-                orientation: 'h',
-                yanchor: 'bottom',
-                y: 1.02,
-                xanchor: 'right',
-                x: 1,
-                font: { size: 10, color: '#475569' }
-            },
+            margin: margin || this.theme.marginProp,
+            showlegend: false,
             xaxis: {
-                title: { text: xTitle, font: { size: 11, color: '#475569' } },
-                gridcolor: this.theme.gridcolor,
-                zerolinecolor: this.theme.zerolinecolor,
-                tickfont: { size: 10, color: '#64748b' },
                 showgrid: true,
-                zeroline: true
+                gridcolor: this.theme.gridcolor,
+                zeroline: true,
+                zerolinecolor: this.theme.zerolinecolor,
+                tickfont: { size: 9, color: '#64748b' }
             },
             yaxis: {
-                title: { text: yTitle, font: { size: 11, color: '#475569' } },
-                gridcolor: this.theme.gridcolor,
-                zerolinecolor: this.theme.zerolinecolor,
-                tickfont: { size: 10, color: '#64748b' },
                 showgrid: true,
+                gridcolor: this.theme.gridcolor,
                 zeroline: true,
-                autorange: true
+                zerolinecolor: this.theme.zerolinecolor,
+                tickfont: { size: 9, color: '#64748b' }
             },
-            hovermode: 'x unified',
-            hoverlabel: {
-                bgcolor: '#ffffff',
-                bordercolor: '#94a3b8',
-                font: { family: 'Inter', size: 11, color: '#0f172a' }
-            }
+            hovermode: false
         };
+
+        if (yRange) {
+            layout.yaxis.range = yRange;
+            layout.yaxis.autorange = false;
+        }
+
+        return layout;
     },
 
     /**
-     * Render plots for Linearity Experiment
+     * Initial Setup for Main Scope: Input Signal x(t)
      */
-    renderLinearity(containers, data) {
-        const t = data.inputs.t;
-        const c = this.theme.colors;
+    initScopeInput(containerId, t, xVals, yMax = 3.5) {
+        const el = document.getElementById(containerId);
+        if (!el || !window.Plotly) return;
 
-        // Plot 1: Inputs
-        const traceX1 = {
+        const trace = {
             x: t,
-            y: data.inputs.x1.values,
+            y: xVals,
             mode: 'lines',
-            name: `x₁(t) [${data.inputs.x1.name}]`,
-            line: { color: c.cyan, width: 2, dash: 'dot' }
-        };
-        const traceX2 = {
-            x: t,
-            y: data.inputs.x2.values,
-            mode: 'lines',
-            name: `x₂(t) [${data.inputs.x2.name}]`,
-            line: { color: c.violet, width: 2, dash: 'dot' }
-        };
-        const traceXComb = {
-            x: t,
-            y: data.inputs.combined.values,
-            mode: 'lines',
-            name: `Combined: a·x₁ + b·x₂ (a=${data.inputs.x1.a}, b=${data.inputs.x2.b})`,
-            line: { color: '#38bdf8', width: 2.5 }
+            name: 'x(t)',
+            line: { color: this.theme.colors.cyan, width: 2.2 }
         };
 
-        const layoutInputs = this.getBaseLayout('Input Signals x₁(t), x₂(t) and Linear Combination', 'Time t (s)', 'Input Amplitude');
-        Plotly.react(containers.inputs, [traceX1, traceX2, traceXComb], layoutInputs, this.plotlyConfig);
-
-        // Plot 2: Outputs (LHS vs RHS)
-        const traceLHS = {
-            x: t,
-            y: data.outputs.lhs,
-            mode: 'lines',
-            name: 'LHS: T{a·x₁ + b·x₂}',
-            line: { color: c.emerald, width: 3 }
-        };
-        const traceRHS = {
-            x: t,
-            y: data.outputs.rhs,
-            mode: 'lines',
-            name: 'RHS: a·T{x₁} + b·T{x₂}',
-            line: { color: c.amber, width: 2, dash: 'dash' }
-        };
-
-        const layoutOutputs = this.getBaseLayout('Superposition Comparison: LHS vs RHS', 'Time t (s)', 'System Output');
-        Plotly.react(containers.outputs, [traceLHS, traceRHS], layoutOutputs, this.plotlyConfig);
-
-        // Plot 3: Error / Difference
-        const traceDiff = {
-            x: t,
-            y: data.outputs.difference,
-            mode: 'lines',
-            name: 'Difference (LHS - RHS)',
-            line: { color: c.rose, width: 2 },
-            fill: 'tozeroy',
-            fillcolor: 'rgba(244, 63, 94, 0.12)'
-        };
-
-        const tol = data.metrics.tolerance;
-        const layoutDiff = this.getBaseLayout(`Error Signal: LHS - RHS (Max Error: ${Utils.formatNumber(data.metrics.maxError)})`, 'Time t (s)', 'Residual Error');
-        layoutDiff.shapes = [
-            {
-                type: 'line',
-                x0: t[0],
-                x1: t[t.length - 1],
-                y0: tol,
-                y1: tol,
-                line: { color: 'rgba(245, 158, 11, 0.6)', width: 1.5, dash: 'dashdot' }
-            },
-            {
-                type: 'line',
-                x0: t[0],
-                x1: t[t.length - 1],
-                y0: -tol,
-                y1: -tol,
-                line: { color: 'rgba(245, 158, 11, 0.6)', width: 1.5, dash: 'dashdot' }
-            }
-        ];
-        layoutDiff.annotations = [
-            {
-                x: t[t.length - 1],
-                y: tol,
-                xref: 'x',
-                yref: 'y',
-                text: `+Tolerance (${Utils.formatNumber(tol)})`,
-                showarrow: false,
-                xanchor: 'right',
-                yanchor: 'bottom',
-                font: { size: 9, color: '#f59e0b' }
-            }
-        ];
-
-        Plotly.react(containers.difference, [traceDiff], layoutDiff, this.plotlyConfig);
+        const layout = this.getBaseLayout(this.theme.marginScope, [-yMax, yMax]);
+        Plotly.react(el, [trace], layout, this.plotlyConfig);
     },
 
     /**
-     * Render plots for Time Invariance Experiment
+     * Live Update for Main Scope
      */
-    renderTimeInvariance(containers, data) {
-        const t = data.inputs.t;
-        const c = this.theme.colors;
-        const t0 = data.t0;
-
-        // Plot 1: Shifted Input
-        const traceXOrig = {
-            x: t,
-            y: data.inputs.original.values,
-            mode: 'lines',
-            name: `Original Input x(t)`,
-            line: { color: c.cyan, width: 2 }
-        };
-        const traceXShift = {
-            x: t,
-            y: data.inputs.shifted.values,
-            mode: 'lines',
-            name: `Shifted Input x(t - ${t0})`,
-            line: { color: c.violet, width: 2, dash: 'dash' }
-        };
-
-        const layoutInputs = this.getBaseLayout(`Input Signals: Original x(t) vs Shifted x(t - ${t0})`, 'Time t (s)', 'Input Amplitude');
-        Plotly.react(containers.inputs, [traceXOrig, traceXShift], layoutInputs, this.plotlyConfig);
-
-        // Plot 2: Outputs (Path 1 vs Path 2)
-        const tracePath1 = {
-            x: t,
-            y: data.outputs.y1Delayed,
-            mode: 'lines',
-            name: `Path 1: Delayed Output y(t - ${t0})`,
-            line: { color: c.emerald, width: 3 }
-        };
-        const tracePath2 = {
-            x: t,
-            y: data.outputs.y2Shifted,
-            mode: 'lines',
-            name: `Path 2: Output to Shifted Input T{x(t - ${t0})}`,
-            line: { color: c.amber, width: 2, dash: 'dash' }
-        };
-
-        const layoutOutputs = this.getBaseLayout('Time Invariance Test: Delayed Output vs Output to Delayed Input', 'Time t (s)', 'System Output');
-        Plotly.react(containers.outputs, [tracePath1, tracePath2], layoutOutputs, this.plotlyConfig);
-
-        // Plot 3: Difference
-        const traceDiff = {
-            x: t,
-            y: data.outputs.difference,
-            mode: 'lines',
-            name: `Shift Discrepancy (Path 2 - Path 1)`,
-            line: { color: c.rose, width: 2 },
-            fill: 'tozeroy',
-            fillcolor: 'rgba(244, 63, 94, 0.12)'
-        };
-
-        const tol = data.metrics.tolerance;
-        const layoutDiff = this.getBaseLayout(`Shift Error: Path 2 - Path 1 (Max Error: ${Utils.formatNumber(data.metrics.maxError)})`, 'Time t (s)', 'Shift Error');
-        layoutDiff.shapes = [
-            {
-                type: 'line',
-                x0: t[0],
-                x1: t[t.length - 1],
-                y0: tol,
-                y1: tol,
-                line: { color: 'rgba(245, 158, 11, 0.6)', width: 1.5, dash: 'dashdot' }
-            },
-            {
-                type: 'line',
-                x0: t[0],
-                x1: t[t.length - 1],
-                y0: -tol,
-                y1: -tol,
-                line: { color: 'rgba(245, 158, 11, 0.6)', width: 1.5, dash: 'dashdot' }
-            }
-        ];
-
-        Plotly.react(containers.difference, [traceDiff], layoutDiff, this.plotlyConfig);
+    updateScopeInput(containerId, xVals) {
+        const el = document.getElementById(containerId);
+        if (!el || !window.Plotly) return;
+        Plotly.restyle(el, { y: [xVals] }, [0]);
     },
 
     /**
-     * Render plots for Causality Experiment
+     * Initial Setup for Section 1: Linearity Plot
+     * Traces: 0: x(t) input, 1: 2x(t) linear scaled, 2: x^2(t) non-linear distorted
      */
-    renderCausality(containers, data) {
-        const t = data.inputs.t;
-        const c = this.theme.colors;
-        const pTime = data.probeTime;
+    initPropLinearity(containerId, t, yInput, yLinear, yNonLinear, yMax = 7.0) {
+        const el = document.getElementById(containerId);
+        if (!el || !window.Plotly) return;
 
-        // Plot 1: Future Perturbation Test Inputs
-        const traceBase = {
+        const trace0 = {
             x: t,
-            y: data.inputs.base.values,
+            y: yInput,
             mode: 'lines',
-            name: 'Original Input x(t)',
-            line: { color: c.cyan, width: 2 }
+            name: 'x(t)',
+            line: { color: this.theme.colors.cyan, width: 1.8 }
         };
-        const tracePert = {
+        const trace1 = {
             x: t,
-            y: data.inputs.perturbed.values,
+            y: yLinear,
             mode: 'lines',
-            name: 'Perturbed Input (Future Disturbance at t > t_probe)',
-            line: { color: c.violet, width: 2, dash: 'dash' }
+            name: '2x(t) [Linear]',
+            line: { color: this.theme.colors.green, width: 2 }
         };
-
-        const layoutInputs = this.getBaseLayout(`Inputs: Future Perturbation Injected at t = ${data.perturbCenter} (strictly after t_probe = ${pTime})`, 'Time t (s)', 'Amplitude');
-        // Vertical line at probe time and shaded future zone
-        layoutInputs.shapes = [
-            {
-                type: 'line',
-                x0: pTime,
-                x1: pTime,
-                y0: 0,
-                y1: 1,
-                yref: 'paper',
-                line: { color: '#38bdf8', width: 2, dash: 'dot' }
-            },
-            {
-                type: 'rect',
-                x0: pTime,
-                x1: t[t.length - 1],
-                y0: 0,
-                y1: 1,
-                yref: 'paper',
-                fillcolor: 'rgba(168, 85, 247, 0.08)',
-                line: { width: 0 }
-            }
-        ];
-        layoutInputs.annotations = [
-            {
-                x: pTime,
-                y: 1,
-                yref: 'paper',
-                text: `Present Observation (t = ${pTime})`,
-                showarrow: true,
-                arrowhead: 2,
-                arrowcolor: '#38bdf8',
-                ax: -40,
-                ay: -25,
-                font: { size: 10, color: '#38bdf8' }
-            },
-            {
-                x: (pTime + t[t.length - 1]) / 2,
-                y: 0.05,
-                yref: 'paper',
-                text: 'FUTURE REGION (t > t_probe)',
-                showarrow: false,
-                font: { size: 10, color: 'rgba(168, 85, 247, 0.7)' }
-            }
-        ];
-
-        Plotly.react(containers.inputs, [traceBase, tracePert], layoutInputs, this.plotlyConfig);
-
-        // Plot 2: Outputs
-        const traceYBase = {
+        const trace2 = {
             x: t,
-            y: data.outputs.base,
+            y: yNonLinear,
             mode: 'lines',
-            name: 'Original Output y_base(t)',
-            line: { color: c.emerald, width: 2.5 }
-        };
-        const traceYPert = {
-            x: t,
-            y: data.outputs.perturbed,
-            mode: 'lines',
-            name: 'Perturbed Output y_pert(t)',
-            line: { color: c.rose, width: 2, dash: 'dash' }
+            name: 'x²(t) [Non-linear]',
+            line: { color: this.theme.colors.amber, width: 1.6, dash: 'dash' }
         };
 
-        const layoutOutputs = this.getBaseLayout(`System Response: Does Present/Past Output React to Future Input?`, 'Time t (s)', 'Output Amplitude');
-        layoutOutputs.shapes = [
-            {
-                type: 'line',
-                x0: pTime,
-                x1: pTime,
-                y0: 0,
-                y1: 1,
-                yref: 'paper',
-                line: { color: '#38bdf8', width: 2, dash: 'dot' }
-            }
-        ];
-
-        Plotly.react(containers.outputs, [traceYBase, traceYPert], layoutOutputs, this.plotlyConfig);
-
-        // Plot 3: Output Difference (Leakage into present/past)
-        const traceDiff = {
-            x: t,
-            y: data.outputs.difference,
-            mode: 'lines',
-            name: 'Output Disturbance: y_pert(t) - y_base(t)',
-            line: { color: c.amber, width: 2 },
-            fill: 'tozeroy',
-            fillcolor: 'rgba(245, 158, 11, 0.15)'
+        const layout = this.getBaseLayout(this.theme.marginProp, [-yMax * 0.7, yMax]);
+        layout.showlegend = true;
+        layout.legend = {
+            orientation: 'h',
+            y: 1.25,
+            x: 0,
+            font: { size: 9, color: '#64748b' }
         };
 
-        const layoutDiff = this.getBaseLayout(`Causality Leakage Test: Non-zero at t ≤ ${pTime} signifies Non-Causal Anticipation`, 'Time t (s)', 'Difference');
-        layoutDiff.shapes = [
-            {
-                type: 'line',
-                x0: pTime,
-                x1: pTime,
-                y0: 0,
-                y1: 1,
-                yref: 'paper',
-                line: { color: '#38bdf8', width: 2, dash: 'dot' }
-            }
-        ];
+        Plotly.react(el, [trace0, trace1, trace2], layout, this.plotlyConfig);
+    },
 
-        Plotly.react(containers.difference, [traceDiff], layoutDiff, this.plotlyConfig);
+    updatePropLinearity(containerId, yInput, yLinear, yNonLinear) {
+        const el = document.getElementById(containerId);
+        if (!el || !window.Plotly) return;
+        Plotly.restyle(el, { y: [yInput, yLinear, yNonLinear] }, [0, 1, 2]);
     },
 
     /**
-     * Render plots for Stability Experiment
+     * Initial Setup for Section 2: Causality Plot
+     * Traces: 0: Present x(t), 1: Causal past x(t - td), 2: Non-causal future x(t + td)
      */
-    renderStability(containers, data) {
-        const t = data.inputs.t;
-        const c = this.theme.colors;
-        const mx = data.inputs.boundMx;
-        const my = data.outputs.peakMy;
+    initPropCausality(containerId, t, yPresent, yPast, yFuture, yMax = 3.5) {
+        const el = document.getElementById(containerId);
+        if (!el || !window.Plotly) return;
 
-        // Plot 1: Bounded Input Signal
-        const traceX = {
+        const trace0 = {
             x: t,
-            y: data.inputs.signal.values,
+            y: yPresent,
             mode: 'lines',
-            name: `Test Input x(t) [${data.inputs.signal.name}]`,
-            line: { color: c.cyan, width: 2 }
+            name: 'x(t) [Present]',
+            line: { color: this.theme.colors.cyan, width: 2 }
+        };
+        const trace1 = {
+            x: t,
+            y: yPast,
+            mode: 'lines',
+            name: 'x(t - 0.5) [Causal]',
+            line: { color: this.theme.colors.green, width: 1.8 }
+        };
+        const trace2 = {
+            x: t,
+            y: yFuture,
+            mode: 'lines',
+            name: 'x(t + 0.5) [Non-causal]',
+            line: { color: this.theme.colors.red, width: 1.6, dash: 'dot' }
         };
 
-        const layoutInputs = this.getBaseLayout(`Bounded Test Input (|x(t)| ≤ M_x = ${Utils.formatNumber(mx, 2)})`, 'Time t (s)', 'Input Amplitude');
-        layoutInputs.shapes = [
-            {
-                type: 'line',
-                x0: t[0],
-                x1: t[t.length - 1],
-                y0: mx,
-                y1: mx,
-                line: { color: c.emerald, width: 1.5, dash: 'dash' }
-            },
-            {
-                type: 'line',
-                x0: t[0],
-                x1: t[t.length - 1],
-                y0: -mx,
-                y1: -mx,
-                line: { color: c.emerald, width: 1.5, dash: 'dash' }
-            }
-        ];
-        layoutInputs.annotations = [
-            {
-                x: t[t.length - 1],
-                y: mx,
-                text: `+M_x (${Utils.formatNumber(mx, 2)})`,
-                showarrow: false,
-                xanchor: 'right',
-                yanchor: 'bottom',
-                font: { size: 10, color: c.emerald }
-            }
-        ];
-
-        Plotly.react(containers.inputs, [traceX], layoutInputs, this.plotlyConfig);
-
-        // Plot 2: Output Signal
-        const traceY = {
-            x: t,
-            y: data.outputs.y,
-            mode: 'lines',
-            name: 'Output y(t) = T{x(t)}',
-            line: { color: c.emerald, width: 2.5 }
-        };
-        const traceEnvelope = {
-            x: t,
-            y: data.outputs.runningPeakY,
-            mode: 'lines',
-            name: 'Cumulative Peak Envelope max |y(τ)|',
-            line: { color: c.amber, width: 1.5, dash: 'dash' }
+        const layout = this.getBaseLayout(this.theme.marginProp, [-yMax, yMax]);
+        layout.showlegend = true;
+        layout.legend = {
+            orientation: 'h',
+            y: 1.25,
+            x: 0,
+            font: { size: 9, color: '#64748b' }
         };
 
-        const layoutOutputs = this.getBaseLayout(`Output Signal & Running Envelope (Observed Peak M_y = ${Utils.formatNumber(my, 2)})`, 'Time t (s)', 'Output Amplitude');
-        layoutOutputs.shapes = [
-            {
-                type: 'line',
-                x0: t[0],
-                x1: t[t.length - 1],
-                y0: my,
-                y1: my,
-                line: { color: c.amber, width: 1.5, dash: 'dot' }
-            },
-            {
-                type: 'line',
-                x0: t[0],
-                x1: t[t.length - 1],
-                y0: -my,
-                y1: -my,
-                line: { color: c.amber, width: 1.5, dash: 'dot' }
-            }
-        ];
+        Plotly.react(el, [trace0, trace1, trace2], layout, this.plotlyConfig);
+    },
 
-        Plotly.react(containers.outputs, [traceY, traceEnvelope], layoutOutputs, this.plotlyConfig);
+    updatePropCausality(containerId, yPresent, yPast, yFuture) {
+        const el = document.getElementById(containerId);
+        if (!el || !window.Plotly) return;
+        Plotly.restyle(el, { y: [yPresent, yPast, yFuture] }, [0, 1, 2]);
+    },
+
+    /**
+     * Initial Setup for Section 3: Time-Invariance Plot
+     * Traces: 0: Original x(t), 1: Time-delayed x(t - 1.0)
+     */
+    initPropTimeInvariance(containerId, t, yOriginal, yShifted, yMax = 3.5) {
+        const el = document.getElementById(containerId);
+        if (!el || !window.Plotly) return;
+
+        const trace0 = {
+            x: t,
+            y: yOriginal,
+            mode: 'lines',
+            name: 'x(t)',
+            line: { color: this.theme.colors.cyan, width: 2 }
+        };
+        const trace1 = {
+            x: t,
+            y: yShifted,
+            mode: 'lines',
+            name: 'x(t - 1.0s) [Shifted]',
+            line: { color: this.theme.colors.green, width: 2, dash: 'dash' }
+        };
+
+        const layout = this.getBaseLayout(this.theme.marginProp, [-yMax, yMax]);
+        layout.showlegend = true;
+        layout.legend = {
+            orientation: 'h',
+            y: 1.25,
+            x: 0,
+            font: { size: 9, color: '#64748b' }
+        };
+
+        Plotly.react(el, [trace0, trace1], layout, this.plotlyConfig);
+    },
+
+    updatePropTimeInvariance(containerId, yOriginal, yShifted) {
+        const el = document.getElementById(containerId);
+        if (!el || !window.Plotly) return;
+        Plotly.restyle(el, { y: [yOriginal, yShifted] }, [0, 1]);
+    },
+
+    /**
+     * Initial Setup for Section 4: Stability Plot
+     * Traces: 0: Signal x(t), 1: +Bound line, 2: -Bound line
+     */
+    initPropStability(containerId, t, ySignal, boundVal, yMax = 4.0) {
+        const el = document.getElementById(containerId);
+        if (!el || !window.Plotly) return;
+
+        const boundUpper = t.map(() => boundVal);
+        const boundLower = t.map(() => -boundVal);
+
+        const trace0 = {
+            x: t,
+            y: ySignal,
+            mode: 'lines',
+            name: 'x(t)',
+            line: { color: this.theme.colors.cyan, width: 2 }
+        };
+        const trace1 = {
+            x: t,
+            y: boundUpper,
+            mode: 'lines',
+            name: `+Bound (${boundVal.toFixed(1)}V)`,
+            line: { color: this.theme.colors.gold, width: 1.5, dash: 'dash' }
+        };
+        const trace2 = {
+            x: t,
+            y: boundLower,
+            mode: 'lines',
+            name: `-Bound (-${boundVal.toFixed(1)}V)`,
+            line: { color: this.theme.colors.gold, width: 1.5, dash: 'dash' }
+        };
+
+        const layout = this.getBaseLayout(this.theme.marginProp, [-yMax, yMax]);
+        layout.showlegend = true;
+        layout.legend = {
+            orientation: 'h',
+            y: 1.25,
+            x: 0,
+            font: { size: 9, color: '#64748b' }
+        };
+
+        Plotly.react(el, [trace0, trace1, trace2], layout, this.plotlyConfig);
+    },
+
+    updatePropStability(containerId, ySignal, boundVal) {
+        const el = document.getElementById(containerId);
+        if (!el || !window.Plotly) return;
+        const len = ySignal.length;
+        const bUp = new Array(len).fill(boundVal);
+        const bDn = new Array(len).fill(-boundVal);
+        Plotly.restyle(el, { y: [ySignal, bUp, bDn] }, [0, 1, 2]);
+    },
+
+    /**
+     * Initial Setup for Section 5: Static vs Dynamic (Memory) Plot
+     * Traces: 0: Signal x(t), 1: Probe marker at t=0, 2: Trailing memory waveform
+     */
+    initPropStaticDynamic(containerId, t, ySignal, probeVal, yMemory, yMax = 3.5) {
+        const el = document.getElementById(containerId);
+        if (!el || !window.Plotly) return;
+
+        const trace0 = {
+            x: t,
+            y: ySignal,
+            mode: 'lines',
+            name: 'x(t)',
+            line: { color: this.theme.colors.cyan, width: 2 }
+        };
+        const trace1 = {
+            x: [0],
+            y: [probeVal],
+            mode: 'markers',
+            name: 't=0 [Instant sample]',
+            marker: { size: 8, color: this.theme.colors.gold }
+        };
+        const trace2 = {
+            x: t,
+            y: yMemory,
+            mode: 'lines',
+            name: 'Memory Delay Buffer',
+            line: { color: this.theme.colors.violet, width: 1.6, dash: 'dot' }
+        };
+
+        const layout = this.getBaseLayout(this.theme.marginProp, [-yMax, yMax]);
+        layout.showlegend = true;
+        layout.legend = {
+            orientation: 'h',
+            y: 1.25,
+            x: 0,
+            font: { size: 9, color: '#64748b' }
+        };
+
+        Plotly.react(el, [trace0, trace1, trace2], layout, this.plotlyConfig);
+    },
+
+    updatePropStaticDynamic(containerId, ySignal, probeVal, yMemory) {
+        const el = document.getElementById(containerId);
+        if (!el || !window.Plotly) return;
+        Plotly.restyle(el, { y: [ySignal, [probeVal], yMemory] }, [0, 1, 2]);
     }
 };
 
-window.Plots = Plots;
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = Plots;
+}
+if (typeof window !== 'undefined') {
+    window.Plots = Plots;
+}

@@ -231,7 +231,309 @@ const Utils = {
      */
     clamp(val, min, max) {
         return Math.max(min, Math.min(max, val));
+    },
+
+    /**
+     * Compile a custom mathematical signal expression f(t)
+     */
+    compileMathExpr(rawExpr) {
+        if (!rawExpr || typeof rawExpr !== 'string') {
+            return { success: false, error: 'Expression must be a non-empty string.' };
+        }
+
+        let expr = rawExpr.trim();
+        // Remove leading prefixes like x(t) = or y(t) =
+        expr = expr.replace(/^(x\(t\)|y\(t\)|f\(t\))\s*=\s*/i, '');
+
+        // Convert e^(...) or e^(-at) to exp(...)
+        expr = expr.replace(/\be\s*\^\s*\(([^)]+)\)/gi, 'exp($1)');
+        expr = expr.replace(/\be\s*\^\s*([a-zA-Z0-9_\.\-]+)/gi, 'exp($1)');
+
+        // Convert constants
+        expr = expr.replace(/\bpi\b/gi, 'Math.PI');
+        expr = expr.replace(/\be\b(?!\w)/gi, 'Math.E');
+
+        // Signals & Systems canonical functions
+        expr = expr.replace(/\bu\s*\(([^)]+)\)/gi, '((($1) >= 0) ? 1 : 0)');
+        expr = expr.replace(/\br\s*\(([^)]+)\)/gi, '((($1) >= 0) ? ($1) : 0)');
+        expr = expr.replace(/\brect\s*\(([^)]+)\)/gi, '(Math.abs($1) <= 0.5 ? 1 : 0)');
+        expr = expr.replace(/\bsinc\s*\(([^)]+)\)/gi, '((($1) === 0) ? 1 : (Math.sin(Math.PI * ($1)) / (Math.PI * ($1))))');
+
+        // Standard Math functions
+        const mathFuncs = ['sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'exp', 'log', 'log10', 'sqrt', 'abs', 'floor', 'ceil', 'round', 'sign'];
+        mathFuncs.forEach(fn => {
+            const regex = new RegExp(`(?<!Math\\.)\\b${fn}\\b`, 'gi');
+            expr = expr.replace(regex, `Math.${fn}`);
+        });
+
+        // Power operator
+        expr = expr.replace(/\^/g, '**');
+
+        // Implicit multiplication
+        expr = expr.replace(/(\d)(\s*)([a-zA-Z\(])/g, '$1*$3');
+        expr = expr.replace(/(\))(\s*)([a-zA-Z\d\(])/g, '$1*$3');
+        expr = expr.replace(/(\bt\b)(\s*)([a-zA-Z\(])/g, '$1*$3');
+
+        try {
+            const fn = new Function('t', `
+                try {
+                    const val = Number(${expr});
+                    return isFinite(val) ? val : 0;
+                } catch(e) {
+                    return 0;
+                }
+            `);
+            fn(0);
+            fn(1);
+            return { success: true, fn, cleanedExpr: expr };
+        } catch (err) {
+            return { success: false, error: err.message, cleanedExpr: expr };
+        }
+    },
+
+    /**
+     * Compile a custom system equation T{x(t)}
+     */
+    compileSystemExpr(rawExpr) {
+        if (!rawExpr || typeof rawExpr !== 'string') {
+            return { success: false, error: 'System expression must be a non-empty string.' };
+        }
+
+        let expr = rawExpr.trim();
+        expr = expr.replace(/^y\(t\)\s*=\s*/i, '');
+
+        const isDiff = /\b(diff|d\/dt|dx\/dt)\b/i.test(expr) || /\\frac\{dx\}\{dt\}/i.test(expr);
+        const isIntegral = /\b(int|integral)\b/i.test(expr) || /\\int/i.test(expr);
+
+        if (isDiff) {
+            return {
+                success: true,
+                id: 'custom_diff',
+                name: 'Custom Differentiator',
+                latex: 'y(t) = \\frac{dx(t)}{dt}',
+                shortFormula: 'dx/dt',
+                description: 'Custom differential operator computed via high-precision numerical derivative.',
+                evaluateFn: (xFn, tArray) => {
+                    const dt = 1e-4;
+                    return tArray.map(t => (xFn(t) - xFn(t - dt)) / dt);
+                },
+                evaluateArray: (xValues, tArray) => Utils.numericalDerivative(xValues, tArray),
+                expectedProperties: {
+                    linearity: { isLinear: true, verdictText: 'Linear', proof: 'Differentiation is a linear operator: d/dt[a*x1 + b*x2] = a*x1\' + b*x2\'.' },
+                    timeInvariance: { isTimeInvariant: true, verdictText: 'Time Invariant', proof: 'Differentiation has constant coefficients independent of time origin.' },
+                    causality: { isCausal: true, verdictText: 'Causal (Backward Limit)', probeOffset: 0, proof: 'Computed using backward differences at t and immediately preceding past instants.' },
+                    stability: { isStable: false, verdictText: 'Not BIBO Stable', proof: 'High frequency or discontinuous bounded inputs produce unbounded derivatives.' },
+                    staticDynamic: { isStatic: false, verdictText: 'Dynamic (With Memory)', proof: 'Rate of change requires knowledge of values over an infinitesimal time neighborhood.' }
+                }
+            };
+        }
+
+        if (isIntegral) {
+            return {
+                success: true,
+                id: 'custom_integral',
+                name: 'Custom Integrator',
+                latex: 'y(t) = \\int_{-\\infty}^t x(\\tau)d\\tau',
+                shortFormula: '\\int_{-\\infty}^t x(\\tau)d\\tau',
+                description: 'Custom cumulative integral operator running up to current time t.',
+                evaluateFn: (xFn, tArray) => {
+                    const xVals = tArray.map(t => xFn(t));
+                    return Utils.cumulativeIntegral(xVals, tArray, 0);
+                },
+                evaluateArray: (xValues, tArray) => Utils.cumulativeIntegral(xValues, tArray, 0),
+                expectedProperties: {
+                    linearity: { isLinear: true, verdictText: 'Linear', proof: 'Integration is a linear integral operator satisfying superposition.' },
+                    timeInvariance: { isTimeInvariant: true, verdictText: 'Time Invariant', proof: 'Integrating shifted inputs yields delayed outputs.' },
+                    causality: { isCausal: true, verdictText: 'Causal', probeOffset: 0, proof: 'Integration runs up to present upper bound t, never into the future.' },
+                    stability: { isStable: false, verdictText: 'Not BIBO Stable', proof: 'Bounded DC step inputs produce unbounded ramps diverging to infinity.' },
+                    staticDynamic: { isStatic: false, verdictText: 'Dynamic (With Memory)', proof: 'Accumulates past energy over the entire previous time history.' }
+                }
+            };
+        }
+
+        let timeTransformFn = (t) => t;
+        let hasTimeShift = false;
+        let shiftAmount = 0;
+        let hasTimeScale = false;
+        let scaleAmount = 1;
+
+        const xArgMatch = expr.match(/x\s*\(\s*([^)]+)\s*\)/i);
+        if (xArgMatch) {
+            const arg = xArgMatch[1].trim();
+            if (arg !== 't') {
+                const shiftMatch = arg.match(/^t\s*([+-])\s*([0-9\.]+)/);
+                if (shiftMatch) {
+                    hasTimeShift = true;
+                    const sign = shiftMatch[1] === '-' ? -1 : 1;
+                    shiftAmount = sign * parseFloat(shiftMatch[2]);
+                    timeTransformFn = (t) => t + shiftAmount;
+                } else if (/^-\s*t$/.test(arg)) {
+                    hasTimeScale = true;
+                    scaleAmount = -1;
+                    timeTransformFn = (t) => -t;
+                } else {
+                    const scaleMatch = arg.match(/^([0-9\.\-]+)\s*\*?\s*t$/);
+                    if (scaleMatch) {
+                        hasTimeScale = true;
+                        scaleAmount = parseFloat(scaleMatch[1]);
+                        timeTransformFn = (t) => scaleAmount * t;
+                    }
+                }
+            }
+        }
+
+        let evalCode = expr.replace(/x\s*\(\s*[^)]+\s*\)/gi, 'xVal(t)');
+        evalCode = evalCode.replace(/\be\s*\^\s*\(([^)]+)\)/gi, 'exp($1)');
+        evalCode = evalCode.replace(/\be\s*\^\s*([a-zA-Z0-9_\.\-]+)/gi, 'exp($1)');
+        evalCode = evalCode.replace(/\bpi\b/gi, 'Math.PI');
+        evalCode = evalCode.replace(/\be\b(?!\w)/gi, 'Math.E');
+
+        const mathFuncs = ['sin', 'cos', 'tan', 'exp', 'log', 'sqrt', 'abs', 'round', 'floor', 'ceil', 'sign'];
+        mathFuncs.forEach(fn => {
+            const regex = new RegExp(`(?<!Math\\.)\\b${fn}\\b`, 'gi');
+            evalCode = evalCode.replace(regex, `Math.${fn}`);
+        });
+
+        evalCode = evalCode.replace(/\^/g, '**');
+        evalCode = evalCode.replace(/(\d)(\s*)([a-zA-Z\(])/g, '$1*$3');
+        evalCode = evalCode.replace(/(\))(\s*)([a-zA-Z\d\(])/g, '$1*$3');
+        evalCode = evalCode.replace(/(\bt\b)(\s*)([a-zA-Z\(])/g, '$1*$3');
+
+        try {
+            const rowFn = new Function('t', 'xVal', `
+                try {
+                    const val = Number(${evalCode});
+                    return isFinite(val) ? val : 0;
+                } catch(e) {
+                    return 0;
+                }
+            `);
+            rowFn(1, () => 2);
+
+            const evaluateFn = (xFn, tArray) => {
+                return tArray.map(t => {
+                    return rowFn(t, (time) => xFn(timeTransformFn(time)));
+                });
+            };
+
+            const evaluateArray = (xValues, tArray) => {
+                const interpFn = (tau) => Utils.interpolate(tau, tArray, xValues, 0);
+                return evaluateFn(interpFn, tArray);
+            };
+
+            const analysis = this.analyzeSystemProperties(rawExpr, evalCode, hasTimeShift, shiftAmount, hasTimeScale, scaleAmount);
+
+            return {
+                success: true,
+                id: 'custom_user_system',
+                name: 'Custom Defined System',
+                latex: `y(t) = ${rawExpr.replace(/\*/g, ' \\cdot ')}`,
+                shortFormula: rawExpr,
+                description: `Custom user-defined mathematical system: y(t) = ${rawExpr}.`,
+                evaluateFn,
+                evaluateArray,
+                expectedProperties: analysis.expectedProperties
+            };
+        } catch (err) {
+            return { success: false, error: err.message };
+        }
+    },
+
+    /**
+     * Analytical Property Analyzer for Custom Equations
+     */
+    analyzeSystemProperties(rawExpr, evalCode, hasShift, shiftAmt, hasScale, scaleAmt) {
+        const exprLower = rawExpr.toLowerCase();
+
+        let isLinear = true;
+        let linearityProof = 'Satisfies superposition principle T{a*x1 + b*x2} = a*T{x1} + b*T{x2}.';
+        if (/\^|\*\*|abs|exp|sin|cos|log|sqrt/.test(exprLower)) {
+            isLinear = false;
+            linearityProof = 'Fails superposition: involves non-linear operators or powers of x(t). Expanding T{a*x1 + b*x2} produces cross terms.';
+        }
+        if (/\+\s*[0-9\.]+|-\s*[0-9\.]+/.test(exprLower) && !/x\s*\(\s*t\s*([+-])/.test(exprLower)) {
+            isLinear = false;
+            linearityProof = 'Fails homogeneity: constant non-zero offset causes T{0} ≠ 0.';
+        }
+
+        let isTimeInvariant = true;
+        let tiProof = 'No explicit time dependency in coefficients. Shifting the input delays the output identically.';
+        const outsideT = rawExpr.replace(/x\s*\([^)]*\)/g, '');
+        if (/\bt\b/.test(outsideT) || (hasScale && scaleAmt !== 1)) {
+            isTimeInvariant = false;
+            tiProof = (hasScale && scaleAmt !== 1)
+                ? `Time scaling x(${scaleAmt}t) produces time-dependent compression: T{x(t - t₀)} ≠ y(t - t₀).`
+                : 'Explicit time variable t appears in system coefficients, causing time-varying behavior.';
+        }
+
+        let isCausal = true;
+        let causalityProof = 'Output at present time t depends solely on present or past inputs (τ ≤ t).';
+        let probeOffset = 0;
+        if (hasShift && shiftAmt > 0) {
+            isCausal = false;
+            probeOffset = shiftAmt;
+            causalityProof = `Output at time t requires future input x(t + ${shiftAmt}), which is anticipative.`;
+        } else if (hasScale && (scaleAmt > 1 || scaleAmt < 0)) {
+            isCausal = false;
+            probeOffset = 1;
+            causalityProof = 'Time scaling/reversal samples future time instants (e.g. for t > 0 when scale > 1, or for t < 0 when reversed).';
+        }
+
+        let isStable = true;
+        let stabilityProof = 'Every bounded input (|x(t)| ≤ Mx < ∞) produces a bounded output (|y(t)| ≤ My < ∞).';
+        if (/\bt\b/.test(outsideT)) {
+            isStable = false;
+            stabilityProof = 'Time factor t grows unboundedly as t → ∞, causing bounded inputs to diverge.';
+        }
+
+        let isStatic = true;
+        let staticProof = 'Memoryless: output at any instant t depends solely on the input value at that exact same instant t.';
+        if (hasShift || (hasScale && scaleAmt !== 1)) {
+            isStatic = false;
+            staticProof = hasShift
+                ? (shiftAmt < 0 
+                    ? `Dynamic (With Memory): output at t depends on past input x(t - ${Math.abs(shiftAmt)}).`
+                    : `Dynamic (With Memory): output at t depends on future input x(t + ${shiftAmt}).`)
+                : 'Dynamic (With Memory): time scaling samples inputs at time instants different from current t.';
+        }
+
+        return {
+            expectedProperties: {
+                linearity: {
+                    isLinear,
+                    verdictText: isLinear ? 'Linear' : 'Non-linear',
+                    proof: linearityProof
+                },
+                timeInvariance: {
+                    isTimeInvariant,
+                    verdictText: isTimeInvariant ? 'Time Invariant' : 'Time Varying',
+                    proof: tiProof
+                },
+                causality: {
+                    isCausal,
+                    verdictText: isCausal ? 'Causal' : 'Non-Causal',
+                    probeOffset,
+                    proof: causalityProof
+                },
+                stability: {
+                    isStable,
+                    verdictText: isStable ? 'BIBO Stable' : 'Not BIBO Stable',
+                    proof: stabilityProof
+                },
+                staticDynamic: {
+                    isStatic,
+                    verdictText: isStatic ? 'Static (Memoryless)' : 'Dynamic (With Memory)',
+                    proof: staticProof
+                }
+            }
+        };
     }
 };
 
-window.Utils = Utils;
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = Utils;
+}
+if (typeof window !== 'undefined') {
+    window.Utils = Utils;
+}
+

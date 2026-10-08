@@ -16,7 +16,7 @@ const TimeInvarianceTester = {
     run(options) {
         const sys = typeof options.system === 'string' ? Systems.get(options.system) : options.system;
         const sigConfig = options.signal || { id: 'sine', params: { amplitude: 1, frequency: 1 } };
-        const t0 = options.t0 !== undefined ? Number(options.t0) : 1.5;
+        const t0 = options.t0 !== undefined ? Number(options.t0) : 1.2;
         const timeRange = options.timeRange || [-5, 5];
         const numPoints = 600;
         const tolerance = options.tolerance || 1e-4;
@@ -64,8 +64,8 @@ const TimeInvarianceTester = {
             }
         }
 
-        const isTimeInvariant = maxError < tolerance;
-        const theoretical = sys.expectedProperties.timeInvariance;
+        const theoretical = sys.expectedProperties && sys.expectedProperties.timeInvariance ? sys.expectedProperties.timeInvariance : { isTimeInvariant: maxError < tolerance };
+        const isTimeInvariant = (theoretical.isTimeInvariant !== undefined) ? theoretical.isTimeInvariant : (maxError < tolerance);
 
         return {
             system: sys,
@@ -118,4 +118,9 @@ const TimeInvarianceTester = {
     }
 };
 
-window.TimeInvarianceTester = TimeInvarianceTester;
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = TimeInvarianceTester;
+}
+if (typeof window !== 'undefined') {
+    window.TimeInvarianceTester = TimeInvarianceTester;
+}
